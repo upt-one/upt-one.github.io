@@ -1,1 +1,1 @@
-export const graphContentEndpoint = "https://graph.microsoft.com/v1.0/drives/b!Up4Du06g6UmFLFC2pNFM4H1p3oaPI9BFm2cBaJXJLUAPtpaJva0iQbeS1uYffokM/root/children?$select=name,lastModifiedDateTime,content.downloadUrl"
+export const graphContentEndpoint = "https://graph.microsoft.com/v1.0/drives/b!2Tl8A9ahDkyiUMF1725FAHkuNH-M1kZDpm9a0-GaaVzJjAmEW7UwRpLlaYCbeEII/items/012YYPBIX4RQ5AVZHKINFLRP522IBMQI4Q/children?$select=name,lastModifiedDateTime,content.downloadUrl"
