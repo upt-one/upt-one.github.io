@@ -7,7 +7,7 @@
   <div class="container-fluid">
     <a class="navbar-brand" href="/" use:link>
       <img
-        src="upt-navy_0.png"
+        src="nav-bar-logo.png"
         height="32px"
         alt="logo"
         class="rounded border border-light" />
