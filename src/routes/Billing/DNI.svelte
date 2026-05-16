@@ -14,7 +14,7 @@
             { title: "A Freight has 300 Gross Gallons", flag: 64 },
             { title: "RefNum of all 0s found", flag: 128 },
             { title: "Review Reason Field", flag: 256 },
-            { title: "Bad RaceTrac PO", flag: 528 },
+            { title: "Bad RaceTrac PO", flag: 512 },
         ]
     const getReasons = row => {
         let retval = FlagMaps
