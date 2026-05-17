@@ -1,23 +1,31 @@
 {
-  "name": "otl-upt.github.io",
-  "version": "1.0",
+  "name": "@frtl/kpi-dashboard",
+  "version": "1.0.0",
   "private": true,
+  "description": "FRTL/UPT KPI dashboard — Svelte SPA. Source-of-truth for upt-one.github.io (and future kpi.pth.io + otl-upt) deploy targets.",
   "scripts": {
     "dev": "vite",
+    "dev:mock": "VITE_USE_MOCK=1 vite",
     "build": "vite build",
     "serve": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "cn": "rm -rf node_modules package-lock.json && npm install",
     "cv": "rm -rf build dist node_modules/.vite && npm install"
   },
   "devDependencies": {
     "@azure/msal-browser": "^4.27.0",
     "@sveltejs/vite-plugin-svelte": "^2.5.3",
+    "@testing-library/jest-dom": "^6.4.2",
+    "@testing-library/svelte": "^4.0.5",
     "bootstrap": "^5.3.8",
     "chart.js": "^4.5.1",
+    "happy-dom": "^14.12.3",
     "lz-string": "^1.5.0",
     "svelte": "^4.2.20",
     "svelte-spa-router": "^4.0.1",
     "unzipit": "^1.4.3",
-    "vite": "^4.5.14"
+    "vite": "^4.5.14",
+    "vitest": "^1.6.1"
   }
 }

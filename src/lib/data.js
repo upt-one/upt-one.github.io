@@ -5,6 +5,8 @@ import { graphContentEndpoint } from "./graph.config";
 import { callMSGraph } from './graph';
 import { unzipRaw } from 'unzipit';
 import { compress, decompress } from 'lz-string';
+import { useMock } from './env';
+import { mockData } from './mock';
 
 const writeCache = async (key, val) => {
   window["dbg"] && console.log("updating cache for", key);
@@ -25,6 +27,12 @@ const fetchAndCache = async (fileData) => {
 }
 
 export const getData = async (accessToken) => {
+  if (useMock) {
+    data.set(mockData);
+    window["dbg"] && (window.json = mockData);
+    return;
+  }
+
   let graphdata = await callMSGraph(graphContentEndpoint, accessToken);
   
   //if we need to filter out file(s) for testing, can be done here.
