@@ -4,10 +4,10 @@
 // module instead of running the real MSAL + Graph flow. Lets you `npm run dev`
 // without an M365 login and see the dashboard rendering against seeded data.
 //
-// FIXTURES: drop JSON files in dashboard/mocks/<name>.json — captured from
-// real production drive outputs (zipped feed-agent artifacts). Each file is
-// imported here and merged into a single data object the same shape getData
-// produces in production. See dashboard/mocks/README.md for capture steps.
+// FIXTURES: drop JSON files in /mocks/<name>.json (REPO ROOT, outside
+// dashboard/). The deploy workflow only ships an allowlist of files inside
+// dashboard/, so fixtures at the repo root can never leak to upt-one.github.io.
+// See /mocks/README.md for capture steps + Vite fs.allow config.
 
 // Stub user — what oMsal.getAllAccounts()[0] would return after a successful login.
 export const mockUser = {
@@ -29,9 +29,11 @@ export const mockAccessToken = 'mock-access-token-not-real';
 //
 // As fixtures land, import them and Object.assign(...) them here.
 //
-// Example (once dashboard/mocks/billing.json exists):
-//   import billing from '../../mocks/billing.json';
+// Example (once /mocks/billing.json exists at repo root):
+//   import billing from '../../../mocks/billing.json';
 //   export const mockData = Object.assign({}, billing);
+// Note: requires `server.fs.allow: ['../mocks']` (or similar) in
+// vite.config.mjs to lift Vite's default project-root sandbox.
 //
 // Until fixtures are captured, mockData is an empty object — the dashboard
 // will render section frames but no tile data.

@@ -1,14 +1,11 @@
 <script>
   import Router from "svelte-spa-router";
-  import Billing from "./routes/Billing/Billing.svelte";
-  import Safety from "./routes/Safety/Safety.svelte";
-  import Maint from "./routes/Maint/Maint.svelte";
-  import Operations from "./routes/Operations/Operations.svelte";
+  import { wrap } from "svelte-spa-router/wrap";
   const routes = {
-    "/": Billing,
-    "/Safety": Safety,
-    "/Maint": Maint,
-    "/Operations": Operations,
+    "/": wrap({ asyncComponent: () => import("./routes/Billing/Billing.svelte") }),
+    "/Safety": wrap({ asyncComponent: () => import("./routes/Safety/Safety.svelte") }),
+    "/Maint": wrap({ asyncComponent: () => import("./routes/Maint/Maint.svelte") }),
+    "/Operations": wrap({ asyncComponent: () => import("./routes/Operations/Operations.svelte") }),
   };
 </script>
 
