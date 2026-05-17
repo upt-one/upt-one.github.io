@@ -22,19 +22,13 @@ export const mockUser = {
 // Stub access token — never sent to a real API in mock mode.
 export const mockAccessToken = 'mock-access-token-not-real';
 
-// Merged mock data. Replace this with imports of real fixtures in dashboard/mocks/.
-// Shape must match what `data.set(...)` expects in data.js — i.e., what
-// getData produces: an object whose top-level keys are dataset names, each
-// pointing to { tds: '<timestamp>', <TableName>: [...rows] }.
-//
-// As fixtures land, import them and Object.assign(...) them here.
-//
-// Example (once /mocks/billing.json exists at repo root):
-//   import billing from '../../../mocks/billing.json';
-//   export const mockData = Object.assign({}, billing);
-// Note: requires `server.fs.allow: ['../mocks']` (or similar) in
-// vite.config.mjs to lift Vite's default project-root sandbox.
-//
-// Until fixtures are captured, mockData is an empty object — the dashboard
-// will render section frames but no tile data.
-export const mockData = {};
+// Merged mock data — real production zips, captured via
+// /scripts/capture-mock-fixtures.sh. Lives at /mocks/<DatasetName>.json
+// at repo root (outside dashboard/ so it never ships to upt-one).
+// Each file's shape is already what data.set() expects: top-level keys
+// = dataset names, each pointing to { tds, <TableName>: [...rows] }.
+import billing from '../../../mocks/BillingV1.json';
+import maintenance from '../../../mocks/MaintenanceV1.json';
+import operations from '../../../mocks/OperationsV1.json';
+import safety from '../../../mocks/SafetyV2.json';
+export const mockData = Object.assign({}, billing, maintenance, operations, safety);

@@ -88,17 +88,43 @@ export const number_format = (number, decimals, dec_point = '.', thousands_sep =
     }
     return s.join(dec_point);
 }
-export const isMP = (json, valToCheck) =>
-    valToCheck !== undefined && json?.EbeV1?.MissingPaperworkV1?.some(x =>
-        x.ord_hdrnumber.toString() === valToCheck.toString().replace(/\D/g, ''))
+// EbeV1.MissingPaperworkV1 (~3700 rows) was being scanned via .some() on
+// every isMP / hasOne / hasMultiplePages call — and those fire for every
+// row of every showMPS KPI on Billing mount. Pre-index the rows into Sets
+// once per data store ref so each lookup is O(1) instead of O(3700).
+let _mpJsonRef = null
+let _mpAll = null
+let _mpHasOne = null
+let _mpHasMultiple = null
 
-export const hasOne = (json, valToCheck) =>
-    valToCheck !== undefined && json?.EbeV1?.MissingPaperworkV1?.filter(x => x.hasOne)
-        .some(x => x.ord_hdrnumber.toString() === valToCheck.toString().replace(/\D/g, ''))
+const buildMpSets = (json) => {
+    if (json === _mpJsonRef) return
+    const rows = json?.EbeV1?.MissingPaperworkV1 ?? []
+    _mpAll = new Set(rows.map(x => x.ord_hdrnumber.toString()))
+    _mpHasOne = new Set(rows.filter(x => x.hasOne).map(x => x.ord_hdrnumber.toString()))
+    _mpHasMultiple = new Set(rows.filter(x => x.hasMultiplePages).map(x => x.ord_hdrnumber.toString()))
+    _mpJsonRef = json
+}
 
-export const hasMultiplePages = (json, valToCheck) =>
-    valToCheck !== undefined && json?.EbeV1?.MissingPaperworkV1?.filter(x => x.hasMultiplePages)
-        .some(x => x.ord_hdrnumber.toString() === valToCheck.toString().replace(/\D/g, ''))
+const normalize = (v) => v.toString().replace(/\D/g, '')
+
+export const isMP = (json, valToCheck) => {
+    if (valToCheck === undefined) return false
+    buildMpSets(json)
+    return _mpAll.has(normalize(valToCheck))
+}
+
+export const hasOne = (json, valToCheck) => {
+    if (valToCheck === undefined) return false
+    buildMpSets(json)
+    return _mpHasOne.has(normalize(valToCheck))
+}
+
+export const hasMultiplePages = (json, valToCheck) => {
+    if (valToCheck === undefined) return false
+    buildMpSets(json)
+    return _mpHasMultiple.has(normalize(valToCheck))
+}
         
 //some utility/helper functions.
 //const groupBy = (x, key) => x.reduce((rv, x)=> { (rv[x[key]] = rv[x[key]] || []).push(x); return rv; }, []);
