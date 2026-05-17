@@ -6,7 +6,14 @@ import {
   sumByMany
 } from '$lib/frtl-utility'
 
+// Memoize on the data store reference. `data.set()` changes the ref only
+// when getData() re-fires (currently once per page load), so subsequent
+// Billing mounts return the cached array without redoing the filter chain.
+let _cachedData = null
+let _cachedResult = null
+
 export const getKPIs = async (d) => {
+  if (d === _cachedData && _cachedResult) return _cachedResult
 
   const fd0 = x => new Date(x)
     .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -384,5 +391,7 @@ export const getKPIs = async (d) => {
     },
   ]
 
+  _cachedData = d
+  _cachedResult = kpis
   return kpis
 }
