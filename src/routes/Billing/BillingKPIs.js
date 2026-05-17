@@ -22,28 +22,33 @@ export const getKPIs = async (d) => {
   const ManualCompletions = json.BillingV1.ManualCompletionsV1
   const NonCompletions = json.BillingV1.NonCompletionsV1
   const LateCompletions = json.BillingV1.LateCompletionsV1
-  const fis = (s) => (a) => a.ivh_invoicestatus === s // filter for invoice status s
-  const InvoicesHLD = json.BillingV1.InvoicesV1.filter(fis('HLD'))
-  const InvoicesHLA = json.BillingV1.InvoicesV1.filter(fis('HLA'))
+  // Single pass over InvoicesV1 — bucket by status + age. Replaces four
+  // .filter chains over ~10k rows (HLD, HLA, HLD>8d, HLD 5-8d) with one
+  // loop that also calls date_diff_indays once per HLD row instead of twice.
+  const tds = json.BillingV1.tds
+  const InvoicesHLD = [], InvoicesHLA = [], InvoicesHLDOld = [], InvoicesHLDYoung = []
+  for (const inv of json.BillingV1.InvoicesV1) {
+    if (inv.ivh_invoicestatus === 'HLA') {
+      InvoicesHLA.push(inv)
+    } else if (inv.ivh_invoicestatus === 'HLD') {
+      InvoicesHLD.push(inv)
+      const age = date_diff_indays(inv.ivh_deliverydate, tds)
+      if (age > 8) InvoicesHLDOld.push(inv)
+      else if (age >= 5 && age <= 8) InvoicesHLDYoung.push(inv)
+    }
+  }
+  const InvoicesOld = InvoicesHLDOld      // Object.values() was redundant — already an array
+  const InvoicesYoung = InvoicesHLDYoung
+
   const ebeMissingPaperwork = json.EbeV1.MissingPaperworkV1
   const ebeMissingPaperworkOld = ebeMissingPaperwork.filter(
-    (x) => date_diff_indays(x.ord_completiondate, json.BillingV1.tds) > 3,
+    (x) => date_diff_indays(x.ord_completiondate, tds) > 3,
   )
   const Orders = json.BillingV1.OrdersV1
   const OrdersOld = Orders.filter(
-    (x) => date_diff_indays(x.ord_completiondate, json.BillingV1.tds) > 3,
+    (x) => date_diff_indays(x.ord_completiondate, tds) > 3,
   )
   const Unrateable = json.BillingV1.UnrateableV1
-  const InvoicesHLDOld = InvoicesHLD.filter(
-    (x) => date_diff_indays(x.ivh_deliverydate, json.BillingV1.tds) > 8,
-  )
-  const InvoicesOld = Object.values(InvoicesHLDOld)
-  const InvoicesHLDYoung = InvoicesHLD.filter((x) =>
-    [5, 6, 7, 8].includes(
-      date_diff_indays(x.ivh_deliverydate, json.BillingV1.tds),
-    ),
-  )
-  const InvoicesYoung = Object.values(InvoicesHLDYoung)
 
   //all order kpis use these settings
   const dnikpis = {
