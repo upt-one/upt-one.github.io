@@ -22,13 +22,19 @@ export const mockUser = {
 // Stub access token — never sent to a real API in mock mode.
 export const mockAccessToken = 'mock-access-token-not-real';
 
-// Merged mock data — real production zips, captured via
-// /scripts/capture-mock-fixtures.sh. Lives at /mocks/<DatasetName>.json
-// at repo root (outside dashboard/ so it never ships to upt-one).
-// Each file's shape is already what data.set() expects: top-level keys
-// = dataset names, each pointing to { tds, <TableName>: [...rows] }.
-import billing from '../../../mocks/BillingV1.json';
-import maintenance from '../../../mocks/MaintenanceV1.json';
-import operations from '../../../mocks/OperationsV1.json';
-import safety from '../../../mocks/SafetyV2.json';
-export const mockData = Object.assign({}, billing, maintenance, operations, safety);
+// mockData stays empty in committed code — IMPORTANT: do NOT commit
+// imports of /mocks/*.json from here. The deploy workflow ships this
+// file to upt-one.github.io (public) and the mocks/ dir does NOT travel
+// with it, so the build fails on upt-one. For local mock-mode dev,
+// temporarily add imports of the fixtures (captured via
+// /scripts/capture-mock-fixtures.sh) and revert before commit:
+//
+//   import billing from '../../../mocks/BillingV1.json';
+//   import maintenance from '../../../mocks/MaintenanceV1.json';
+//   import operations from '../../../mocks/OperationsV1.json';
+//   import safety from '../../../mocks/SafetyV2.json';
+//   export const mockData = Object.assign({}, billing, maintenance, operations, safety);
+//
+// Follow-up: gated-conditional import or a `mock.local.js` pattern so
+// local fixtures don't require manual revert. Tracked under #10.
+export const mockData = {};
