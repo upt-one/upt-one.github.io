@@ -32,8 +32,7 @@ export const mockAccessToken = 'mock-access-token-not-real';
 //   import billing from '../../../mocks/BillingV1.json';
 //   import maintenance from '../../../mocks/MaintenanceV1.json';
 //   import operations from '../../../mocks/OperationsV1.json';
-//   import safety from '../../../mocks/SafetyV2.json';
-//   export const mockData = Object.assign({}, billing, maintenance, operations, safety);
+//   export const mockData = Object.assign({}, billing, maintenance, operations);
 //
 // Follow-up: gated-conditional import or a `mock.local.js` pattern so
 // local fixtures don't require manual revert. Tracked under #10.

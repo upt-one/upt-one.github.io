@@ -8,7 +8,6 @@
   import Billing from "./routes/Billing/Billing.svelte";
   const routes = {
     "/": Billing,
-    "/Safety": wrap({ asyncComponent: () => import("./routes/Safety/Safety.svelte") }),
     "/Maint": wrap({ asyncComponent: () => import("./routes/Maint/Maint.svelte") }),
     "/Operations": wrap({ asyncComponent: () => import("./routes/Operations/Operations.svelte") }),
   };
