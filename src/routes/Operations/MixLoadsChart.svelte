@@ -29,7 +29,7 @@
       <button
         type="button"
         class="btn btn-outline-primary"
-        on:click={downloadcsv(config.rows, null, `Mix Loads Data`)}>
+        on:click={() => downloadcsv(config.rows, null, `Mix Loads Data`)}>
         Download Data
       </button>
     </div>

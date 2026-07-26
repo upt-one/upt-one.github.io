@@ -6,7 +6,33 @@ import {
   sumByMany
 } from '$lib/frtl-utility'
 
-export const getKPIs = async (d) => {
+export const getKPIs = async (d, division = '') => {
+
+  // #46. The feeds emit RAW db column names in V2: ord_revtype1/ivh_revtype1 = the COMPANY
+  // (division), ord_revtype2/ivh_revtype2 = the TERMINAL. V1 shipped the terminal under the
+  // revtype1 name (pre-merger there was only one company, so the label was cosmetic) and has
+  // no company at all. Prefer V2, fall back to V1 while the feeds roll out (expand and
+  // contract, docs/architecture.md). Naming stays db-truth end to end; "Terminal" is a UI
+  // label applied at render, never a renamed data column.
+  const pick = (ds, name) => ds?.[`${name}V2`] ?? ds?.[`${name}V1`] ?? []
+  const isV2 = (ds, name) => ds?.[`${name}V2`] !== undefined
+
+  // On V2 the terminal is revtype2; on V1 it is (mislabeled) revtype1. Drilldown grouping
+  // reads whichever this payload actually carries.
+  const ordTerminal = isV2(d.BillingV1, 'Orders') ? 'ord_revtype2' : 'ord_revtype1'
+  const ivhTerminal = isV2(d.BillingV1, 'Invoices') ? 'ivh_revtype2' : 'ivh_revtype1'
+  const ebeTerminal = isV2(d.EbeV1, 'MissingPaperwork') ? 'ord_revtype2' : 'ord_revtype1'
+  // the per-driver rollups: V1 aliased the terminal to [Terminal], V2 emits ord_revtype2 raw
+  const mcTerminal = isV2(d.BillingV1, 'ManualCompletions') ? 'ord_revtype2' : 'Terminal'
+  const mcapTerminal = isV2(d.EbeV1, 'MobileCapture') ? 'ord_revtype2' : 'Terminal'
+
+  // Division filter: only V2 rows carry the company, so V1 payloads pass through untouched
+  // and the page behaves exactly as it does today.
+  const byDiv = (rows, field = 'ord_revtype1') =>
+    division && rows.length && rows[0][field] !== undefined && rows[0].__v2
+      ? rows.filter((r) => r[field] === division)
+      : rows
+  const tag = (rows, v2) => (v2 ? rows.map((r) => ({ ...r, __v2: true })) : rows)
 
   const fd0 = x => new Date(x)
     .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -17,17 +43,18 @@ export const getKPIs = async (d) => {
   const fic4 = x => `${fic0(x)} (${fic3(x)})`
 
   const json = d
-  const LostAccessorials = json.BillingV1.LostAccessorialsV1.map(x => ({...x, Date: x.ivh_billdate.substring(0,10)}))
-  const DriverScans = json.EbeV1.MobileCaptureV1
-  const ManualCompletions = json.BillingV1.ManualCompletionsV1
-  const NonCompletions = json.BillingV1.NonCompletionsV1
-  const LateCompletions = json.BillingV1.LateCompletionsV1
+  const LostAccessorials = byDiv(tag(pick(json.BillingV1, 'LostAccessorials'), isV2(json.BillingV1, 'LostAccessorials')), 'ivh_revtype1')
+    .map(x => ({...x, Date: x.ivh_billdate.substring(0,10)}))
+  const DriverScans = byDiv(tag(pick(json.EbeV1, 'MobileCapture'), isV2(json.EbeV1, 'MobileCapture')))
+  const ManualCompletions = byDiv(tag(pick(json.BillingV1, 'ManualCompletions'), isV2(json.BillingV1, 'ManualCompletions')))
+  const NonCompletions = byDiv(tag(pick(json.BillingV1, 'NonCompletions'), isV2(json.BillingV1, 'NonCompletions')))
+  const LateCompletions = byDiv(tag(pick(json.BillingV1, 'LateCompletions'), isV2(json.BillingV1, 'LateCompletions')))
   // Single pass over InvoicesV1 — bucket by status + age. Replaces four
   // .filter chains over ~10k rows (HLD, HLA, HLD>8d, HLD 5-8d) with one
   // loop that also calls date_diff_indays once per HLD row instead of twice.
   const tds = json.BillingV1.tds
   const InvoicesHLD = [], InvoicesHLA = [], InvoicesHLDOld = [], InvoicesHLDYoung = []
-  for (const inv of json.BillingV1.InvoicesV1) {
+  for (const inv of byDiv(tag(pick(json.BillingV1, 'Invoices'), isV2(json.BillingV1, 'Invoices')), 'ivh_revtype1')) {
     if (inv.ivh_invoicestatus === 'HLA') {
       InvoicesHLA.push(inv)
     } else if (inv.ivh_invoicestatus === 'HLD') {
@@ -40,15 +67,15 @@ export const getKPIs = async (d) => {
   const InvoicesOld = InvoicesHLDOld      // Object.values() was redundant — already an array
   const InvoicesYoung = InvoicesHLDYoung
 
-  const ebeMissingPaperwork = json.EbeV1.MissingPaperworkV1
+  const ebeMissingPaperwork = byDiv(tag(pick(json.EbeV1, 'MissingPaperwork'), isV2(json.EbeV1, 'MissingPaperwork')))
   const ebeMissingPaperworkOld = ebeMissingPaperwork.filter(
     (x) => date_diff_indays(x.ord_completiondate, tds) > 3,
   )
-  const Orders = json.BillingV1.OrdersV1
+  const Orders = byDiv(tag(pick(json.BillingV1, 'Orders'), isV2(json.BillingV1, 'Orders')))
   const OrdersOld = Orders.filter(
     (x) => date_diff_indays(x.ord_completiondate, tds) > 3,
   )
-  const Unrateable = json.BillingV1.UnrateableV1
+  const Unrateable = byDiv(tag(pick(json.BillingV1, 'Unrateable'), isV2(json.BillingV1, 'Unrateable')))
 
   //all order kpis use these settings
   const dnikpis = {
@@ -66,8 +93,8 @@ export const getKPIs = async (d) => {
     }),
     sumv: tt => `${tt.val.toFixed(0)}`,
     isDNI: true,
-    tsum: (x) => countBy(x, 'ord_revtype1', 'ord_hdrnumber'),
-    kfil: 'ord_revtype1',
+    tsum: (x) => countBy(x, ordTerminal, 'ord_hdrnumber'),
+    kfil: ordTerminal,
     mpf: 'ord_hdrnumber', //Missing Paperwork search Field
     showMPS: true,
   }
@@ -91,8 +118,8 @@ export const getKPIs = async (d) => {
     }),
     sumv: (tt, rows) => `$${number_format(tt.val, 2)} (${rows.length})`,
     isInvoice: true,
-    tsum: (x) => sumBy(x, 'ivh_revtype1', 'ivh_totalcharge'),
-    kfil: 'ivh_revtype1',
+    tsum: (x) => sumBy(x, ivhTerminal, 'ivh_totalcharge'),
+    kfil: ivhTerminal,
     thdr: 'Amount (Count)',
     mpf: 'ivh_invoicenumber', //Missing Paperwork search Field
   }
@@ -119,8 +146,8 @@ export const getKPIs = async (d) => {
         ord_invoicestatus: x.ord_invoicestatus,
       }),
       sumv: tt => `${tt.val.toFixed(0)}`,
-      tsum: (x) => countBy(x, 'ord_revtype1', 'ord_hdrnumber'),
-      kfil: 'ord_revtype1',
+      tsum: (x) => countBy(x, ordTerminal, 'ord_hdrnumber'),
+      kfil: ordTerminal,
     },
     {
       KPI: 'Late Completions (45 days)',
@@ -143,8 +170,8 @@ export const getKPIs = async (d) => {
         updated_by: x.updated_by,
       }),
       sumv: tt => `${tt.val.toFixed(0)}`,
-      tsum: (x) => countBy(x, 'ord_revtype1', 'ord_hdrnumber'),
-      kfil: 'ord_revtype1',
+      tsum: (x) => countBy(x, ordTerminal, 'ord_hdrnumber'),
+      kfil: ordTerminal,
     },
     {
       KPI: 'Order Completion Success',
@@ -152,10 +179,10 @@ export const getKPIs = async (d) => {
         const rows = ManualCompletions
         const mcc = rows
           .map(x => parseInt(x.ManualCompletionCount))
-          .reduce((a, b) => a + b)
+          .reduce((a, b) => a + b, 0)
         const tc = rows
           .map(x => parseInt(x.TotalCount))
-          .reduce((a, b) => a + b)
+          .reduce((a, b) => a + b, 0) || 1 // a filter can empty this set; avoid NaN%
         const mcpct = (mcc * 100.0 / tc).toFixed(0)
         //return `(${mcc}/${tc}) ${mcpct}%`
         return `${100 - mcpct}%`
@@ -174,25 +201,25 @@ export const getKPIs = async (d) => {
       }),
       sumv: tt => `(${tt.SuccessCount}/${tt.TotalCount}) ${tt.SuccessRate.toFixed(0)}%`,
       thdr: 'Order Completion Success',
-      tsum: (x) => sumByMany(x, 'Terminal', 'ManualCompletionCount', 'TotalCount')
+      tsum: (x) => sumByMany(x, mcTerminal, 'ManualCompletionCount', 'TotalCount')
         .map(x => ({
-          key: x.Terminal,
+          key: x[mcTerminal],
           SuccessCount: x.TotalCount - x.ManualCompletionCount,
           //SuccessRate is the same as val, but including it here to use as a named value later
           //key/val are just standardized naming with all of the other KPIs since most use a diff function to sum/count
           SuccessRate: Math.round(100.0 * (x.TotalCount - x.ManualCompletionCount) / x.TotalCount),
           ...x
         })).sort((a, b) => b.SuccessRate - a.SuccessRate),
-      kfil: 'Terminal',
+      kfil: mcTerminal,
       isDriverStats: true
     },
     {
       KPI: 'Mobile Capture Success',
       Current:
         `${(DriverScans.map(x => parseInt(x.DriverScanCount))
-          .reduce((a, b) => a + b) * 100.0 /
-          DriverScans.map(x => parseInt(x.TotalCount))
-            .reduce((a, b) => a + b)).toFixed(0)}%`
+          .reduce((a, b) => a + b, 0) * 100.0 /
+          (DriverScans.map(x => parseInt(x.TotalCount))
+            .reduce((a, b) => a + b, 0) || 1)).toFixed(0)}%`
       ,
       Goal: '95%',
       rt: 'aciBilling9',
@@ -207,16 +234,16 @@ export const getKPIs = async (d) => {
       }),
       sumv: tt => `${tt.SuccessRate.toFixed(0)}%`,
       thdr: 'Driver Scan %',
-      tsum: (x) => sumByMany(x, 'Terminal', 'DriverScanCount', 'TotalCount')
+      tsum: (x) => sumByMany(x, mcapTerminal, 'DriverScanCount', 'TotalCount')
         .map(x => ({
-          key: x.Terminal,
+          key: x[mcapTerminal],
           SuccessCount: x.DriverScanCount,
           //SuccessRate is the same as val, but including it here to use as a named value later
           //key/val are just standardized naming with all of the other KPIs since most use a diff function to sum/count
           SuccessRate: Math.round(100.0 * x.DriverScanCount / x.TotalCount),
           ...x
         })).sort((a, b) => b.SuccessRate - a.SuccessRate),
-      kfil: 'Terminal',
+      kfil: mcapTerminal,
       isDriverStats: true
     },
     {
@@ -241,8 +268,8 @@ export const getKPIs = async (d) => {
       }),
       sumv: tt => `${tt.val.toFixed(0)}`,
       isOrder: true,
-      tsum: (x) => countBy(x, 'ord_revtype1', 'ord_hdrnumber'),
-      kfil: 'ord_revtype1',
+      tsum: (x) => countBy(x, ordTerminal, 'ord_hdrnumber'),
+      kfil: ordTerminal,
       mpf: 'ord_hdrnumber'
     },
     {
@@ -267,8 +294,8 @@ export const getKPIs = async (d) => {
       }),
       sumv: tt => `${tt.val.toFixed(0)}`,
       isOrder: true,
-      tsum: (x) => countBy(x, 'ord_revtype1', 'ord_hdrnumber'),
-      kfil: 'ord_revtype1',
+      tsum: (x) => countBy(x, ordTerminal, 'ord_hdrnumber'),
+      kfil: ordTerminal,
       mpf: 'ord_hdrnumber'
     },
     {
@@ -281,7 +308,7 @@ export const getKPIs = async (d) => {
         ',',
       ),
       mapf: (x) => ({
-        ivh_revtype1: x.ivh_revtype1,
+        ivh_revtype1: x[ivhTerminal],
         ivh_billto: x.ivh_billto,
         ivh_invoicenumber: x.ivh_invoicenumber,
         pyt_description: x.pyt_description,
@@ -338,8 +365,8 @@ export const getKPIs = async (d) => {
       }),
       sumv: tt => `${tt.val.toFixed(0)}`,
       isOrder: true,
-      tsum: (x) => countBy(x, 'ord_revtype1', 'ord_hdrnumber'),
-      kfil: 'ord_revtype1',
+      tsum: (x) => countBy(x, ordTerminal, 'ord_hdrnumber'),
+      kfil: ordTerminal,
       mpf: 'ord_hdrnumber', //Missing Paperwork search Field
       showMPS: true,
     },

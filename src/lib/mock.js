@@ -22,18 +22,11 @@ export const mockUser = {
 // Stub access token — never sent to a real API in mock mode.
 export const mockAccessToken = 'mock-access-token-not-real';
 
-// mockData stays empty in committed code — IMPORTANT: do NOT commit
-// imports of /mocks/*.json from here. The deploy workflow ships this
-// file to upt-one.github.io (public) and the mocks/ dir does NOT travel
-// with it, so the build fails on upt-one. For local mock-mode dev,
-// temporarily add imports of the fixtures (captured via
-// /scripts/capture-mock-fixtures.sh) and revert before commit:
-//
-//   import billing from '../../../mocks/BillingV1.json';
-//   import maintenance from '../../../mocks/MaintenanceV1.json';
-//   import operations from '../../../mocks/OperationsV1.json';
-//   export const mockData = Object.assign({}, billing, maintenance, operations);
-//
-// Follow-up: gated-conditional import or a `mock.local.js` pattern so
-// local fixtures don't require manual revert. Tracked under #10.
-export const mockData = {};
+// Fixtures auto-load via import.meta.glob (closes the #10 manual-import ritual):
+// in THIS repo mocks/*.json exist and get bundled for dev/CI; on upt-one.github.io
+// the mocks/ dir does not travel with the shipped source, the glob matches nothing
+// at build time, and mockData is {} with zero fixture bytes in the public build.
+// Capture fixtures with scripts/capture-mock-fixtures.ps1 (+ the #46 enricher while
+// the feeds' division column rolls out).
+const fixtures = import.meta.glob('../../../mocks/*.json', { eager: true, import: 'default' });
+export const mockData = Object.assign({}, ...Object.values(fixtures));

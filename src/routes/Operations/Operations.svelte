@@ -1,6 +1,5 @@
 <script>
   import DriverCountPerDay from './DriverCountPerDay.svelte'
-  import LULCharts from './LULCharts.svelte'
   import RunoutsPerDay from './RunoutsPerDay.svelte'
   import LoadForecast from './LoadForecast.svelte'
   import LoadHistory from './LoadHistory.svelte'
