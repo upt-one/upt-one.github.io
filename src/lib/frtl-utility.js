@@ -88,7 +88,7 @@ export const number_format = (number, decimals, dec_point = '.', thousands_sep =
     }
     return s.join(dec_point);
 }
-// EbeV1.MissingPaperworkV1 (~3700 rows) was being scanned via .some() on
+// EbeV1.MissingPaperworkV2 (~3700 rows) was being scanned via .some() on
 // every isMP / hasOne / hasMultiplePages call — and those fire for every
 // row of every showMPS KPI on Billing mount. Pre-index the rows into Sets
 // once per data store ref so each lookup is O(1) instead of O(3700).
@@ -99,7 +99,7 @@ let _mpHasMultiple = null
 
 const buildMpSets = (json) => {
     if (json === _mpJsonRef) return
-    const rows = json?.EbeV1?.MissingPaperworkV1 ?? []
+    const rows = json?.EbeV1?.MissingPaperworkV2 ?? []
     _mpAll = new Set(rows.map(x => x.ord_hdrnumber.toString()))
     _mpHasOne = new Set(rows.filter(x => x.hasOne).map(x => x.ord_hdrnumber.toString()))
     _mpHasMultiple = new Set(rows.filter(x => x.hasMultiplePages).map(x => x.ord_hdrnumber.toString()))

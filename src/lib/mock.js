@@ -28,5 +28,8 @@ export const mockAccessToken = 'mock-access-token-not-real';
 // at build time, and mockData is {} with zero fixture bytes in the public build.
 // Capture fixtures with scripts/capture-mock-fixtures.ps1 (+ the #46 enricher while
 // the feeds' division column rolls out).
-const fixtures = import.meta.glob('../../../mocks/*.json', { eager: true, import: 'default' });
-export const mockData = Object.assign({}, ...Object.values(fixtures));
+// Fixtures come from the `$fixtures` alias, which vite.config.mjs points at the real loader
+// in mock mode and at an empty stub otherwise. That keeps the #10 manual-import ritual dead
+// while guaranteeing a production bundle carries zero fixture bytes.
+import { fixtures } from '$fixtures'
+export const mockData = Object.assign({}, ...Object.values(fixtures), {})

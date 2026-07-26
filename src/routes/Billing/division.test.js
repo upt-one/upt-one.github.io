@@ -1,6 +1,5 @@
-// #46 contract: the feeds emit RAW db names in V2 (revtype1 = company, revtype2 = terminal);
-// V1 carried the terminal under the revtype1 name and no company at all. The page must
-// prefer V2, fall back to V1 unchanged, and filter by company only when V2 is present.
+// #46 contract: the feeds emit RAW db names (revtype1 = company, revtype2 = terminal) and the
+// page reads the V2 tables only. "Terminal"/"Division" are UI labels, never data columns.
 import { describe, it, expect } from 'vitest'
 import { getKPIs } from './BillingKPIs.js'
 
@@ -16,90 +15,53 @@ const ord = (n, div, term) => ({
   ...(div ? { ord_revtype1: div, ord_revtype2: term } : { ord_revtype1: term }),
 })
 
-// V1-only: exactly what production serves today
-const v1 = () => ({
+// the shape the feeds emit now
+const base = () => ({
   BillingV1: {
     tds: iso(3),
-    InvoicesV1: [inv('A1', null, 'MAC', 'HLD', 100), inv('A2', null, 'HOU', 'HLD', 300)],
-    OrdersV1: [ord(1, null, 'MAC'), ord(2, null, 'HOU')],
-    NonCompletionsV1: [], LateCompletionsV1: [], LostAccessorialsV1: [], UnrateableV1: [],
-    ManualCompletionsV1: [
-      { Terminal: 'MAC', Driver: 'D1', ManualCompletionCount: 2, TotalCount: 10 },
-      { Terminal: 'HOU', Driver: 'D2', ManualCompletionCount: 5, TotalCount: 10 },
+    InvoicesV2: [inv('A1', 'FLRT', 'MAC', 'HLD', 100), inv('A2', 'UPT', 'HOU', 'HLD', 300)],
+    OrdersV2: [ord(1, 'FLRT', 'MAC'), ord(2, 'UPT', 'HOU')],
+    NonCompletionsV2: [], LateCompletionsV2: [], LostAccessorialsV2: [], UnrateableV2: [],
+    ManualCompletionsV2: [
+      { ord_revtype1: 'FLRT', ord_revtype2: 'MAC', Driver: 'D1', ManualCompletionCount: 2, TotalCount: 10 },
+      { ord_revtype1: 'UPT', ord_revtype2: 'HOU', Driver: 'D2', ManualCompletionCount: 5, TotalCount: 10 },
     ],
   },
   EbeV1: {
-    tds: iso(3), MissingPaperworkV1: [],
-    MobileCaptureV1: [
-      { Terminal: 'MAC', Driver: 'D1', DriverScanCount: 9, TotalCount: 10 },
-      { Terminal: 'HOU', Driver: 'D2', DriverScanCount: 1, TotalCount: 10 },
+    tds: iso(3), MissingPaperworkV2: [],
+    MobileCaptureV2: [
+      { ord_revtype1: 'FLRT', ord_revtype2: 'MAC', Driver: 'D1', DriverScanCount: 9, TotalCount: 10 },
+      { ord_revtype1: 'UPT', ord_revtype2: 'HOU', Driver: 'D2', DriverScanCount: 1, TotalCount: 10 },
     ],
   },
 })
 
-// The transition payload: BOTH versions in one file, which is what the feed emits mid-migration
-const dual = () => {
-  const d = v1()
-  d.BillingV1.InvoicesV2 = [inv('A1', 'FLRT', 'MAC', 'HLD', 100), inv('A2', 'UPT', 'HOU', 'HLD', 300)]
-  d.BillingV1.OrdersV2 = [ord(1, 'FLRT', 'MAC'), ord(2, 'UPT', 'HOU')]
-  d.BillingV1.NonCompletionsV2 = []
-  d.BillingV1.LateCompletionsV2 = []
-  d.BillingV1.LostAccessorialsV2 = []
-  d.BillingV1.UnrateableV2 = []
-  d.BillingV1.ManualCompletionsV2 = [
-    { ord_revtype1: 'FLRT', ord_revtype2: 'MAC', Driver: 'D1', ManualCompletionCount: 2, TotalCount: 10 },
-    { ord_revtype1: 'UPT', ord_revtype2: 'HOU', Driver: 'D2', ManualCompletionCount: 5, TotalCount: 10 },
-  ]
-  d.EbeV1.MissingPaperworkV2 = []
-  d.EbeV1.MobileCaptureV2 = [
-    { ord_revtype1: 'FLRT', ord_revtype2: 'MAC', Driver: 'D1', DriverScanCount: 9, TotalCount: 10 },
-    { ord_revtype1: 'UPT', ord_revtype2: 'HOU', Driver: 'D2', DriverScanCount: 1, TotalCount: 10 },
-  ]
-  return d
-}
 const cur = (k, name) => k.find((x) => x.KPI === name).Current
 const tile = (k, name) => k.find((x) => x.KPI === name)
 
-describe('V1 payload (production today)', () => {
-  it('renders unfiltered, exactly as before', async () => {
-    const k = await getKPIs(v1(), '')
-    expect(cur(k, 'Do Not Invoice - Total')).toBe('2')
-    expect(cur(k, 'Order Completion Success')).toBe('65%')
-  })
-  it('ignores a division selection (V1 has no company)', async () => {
-    const k = await getKPIs(v1(), 'FLRT')
-    expect(cur(k, 'Do Not Invoice - Total')).toBe('2')
-  })
-  it('groups drilldowns on the V1 (mislabeled) terminal column', async () => {
-    const k = await getKPIs(v1(), '')
-    expect(tile(k, 'Do Not Invoice - Total').kfil).toBe('ord_revtype1')
-    expect(tile(k, 'Mobile Capture Success').kfil).toBe('Terminal')
-  })
-})
-
-describe('dual payload (mid-migration)', () => {
-  it('prefers V2 and filters by the real revtype1', async () => {
-    const flrt = await getKPIs(dual(), 'FLRT')
+describe('V2 payload', () => {
+  it('filters by the real revtype1 (the company)', async () => {
+    const flrt = await getKPIs(base(), 'FLRT')
     expect(cur(flrt, 'Do Not Invoice - Total')).toBe('1')
     expect(cur(flrt, 'Order Completion Success')).toBe('80%')
     expect(cur(flrt, 'Mobile Capture Success')).toBe('90%')
-    const upt = await getKPIs(dual(), 'UPT')
+    const upt = await getKPIs(base(), 'UPT')
     expect(cur(upt, 'Order Completion Success')).toBe('50%')
     expect(cur(upt, 'Mobile Capture Success')).toBe('10%')
   })
-  it('unfiltered totals match the V1 numbers (no double count)', async () => {
-    const k = await getKPIs(dual(), '')
+  it('unfiltered totals cover every division', async () => {
+    const k = await getKPIs(base(), '')
     expect(cur(k, 'Do Not Invoice - Total')).toBe('2')
     expect(cur(k, 'Order Completion Success')).toBe('65%')
   })
   it('groups drilldowns on the real terminal column', async () => {
-    const k = await getKPIs(dual(), '')
+    const k = await getKPIs(base(), '')
     expect(tile(k, 'Do Not Invoice - Total').kfil).toBe('ord_revtype2')
     expect(tile(k, 'Unbilled Revenue - Total').kfil).toBe('ivh_revtype2')
     expect(tile(k, 'Mobile Capture Success').kfil).toBe('ord_revtype2')
   })
   it('survives a filter that empties a driver-stat tile', async () => {
-    const d = dual()
+    const d = base()
     d.EbeV1.MobileCaptureV2 = d.EbeV1.MobileCaptureV2.filter((r) => r.ord_revtype1 === 'UPT')
     const k = await getKPIs(d, 'FLRT')
     expect(cur(k, 'Mobile Capture Success')).toBe('0%')

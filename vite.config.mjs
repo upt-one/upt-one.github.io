@@ -44,6 +44,13 @@ export default defineConfig({
   resolve: {
     alias: {
       '$lib': path.resolve(__dirname, 'src/lib'),
+      // Mock fixtures are pulled in by ALIAS, not by a runtime/tree-shake condition: only a
+      // mock build resolves the loader that globs /mocks, so a production bundle can never
+      // embed fixture data even though the mocks/ dir exists in this repo (#46).
+      '$fixtures': path.resolve(
+        __dirname,
+        process.env.VITE_USE_MOCK ? 'src/lib/fixtures.mock.js' : 'src/lib/fixtures.empty.js',
+      ),
     },
   },
 });
