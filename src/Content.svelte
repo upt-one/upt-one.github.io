@@ -10,6 +10,7 @@
     "/": Billing,
     "/Maint": wrap({ asyncComponent: () => import("./routes/Maint/Maint.svelte") }),
     "/Operations": wrap({ asyncComponent: () => import("./routes/Operations/Operations.svelte") }),
+    "/Finance": wrap({ asyncComponent: () => import("./routes/Finance/Finance.svelte") }),
   };
 </script>
 

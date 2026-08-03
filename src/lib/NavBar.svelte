@@ -16,6 +16,7 @@
     <div class="collapse navbar-collapse" id="navbarsExample02">
       <div class="navbar-nav ms-auto">
         <a class="nav-link" use:link use:active={'/'} href="/">Billing</a>
+        <a class="nav-link" use:link use:active href="/finance">Finance</a>
         <a class="nav-link" use:link use:active href="/operations">
           Ops
         </a>
