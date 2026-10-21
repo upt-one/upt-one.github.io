@@ -109,7 +109,7 @@ export const getKPIs = async (d, division = '') => {
   //create kpi array with settings, merge in order and invoice kpis when appropriate
   const kpis = [
     {
-      KPI: 'Non-Completions (45 days)',
+      KPI: 'Non-Completions (1 year)',
       Current: `${NonCompletions.length}`,
       Goal: '20',
       rt: 'aciBilling10',

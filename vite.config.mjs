@@ -12,7 +12,11 @@ export default defineConfig({
       'top-level-await': true,
     },
   },
-  plugins: [svelte()],
+  // the local real-data proxy lives outside dashboard/ and loads only when asked for, so a
+  // production build never resolves it (scripts/dev-local.ps1)
+  plugins: [svelte(), ...(process.env.VITE_LOCAL_DATA
+    ? [(await import(new URL('../scripts/local-graph.mjs', import.meta.url).href)).default()]
+    : [])],
   build: {
     outDir: 'build', // output to build to conform to existing build scripts
     rollupOptions: {
@@ -39,7 +43,7 @@ export default defineConfig({
     },
   },
   server: {
-    port: 8080, // use 8080 so SSO will still work
+    port: 8080, // mock mode only. real mode (SSO) must run on localhost:3000, see docs/development.md
   },
   resolve: {
     alias: {

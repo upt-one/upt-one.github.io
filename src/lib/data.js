@@ -5,7 +5,7 @@ import { graphContentEndpoint } from "./graph.config";
 import { callMSGraph } from './graph';
 import { unzipRaw } from 'unzipit';
 import { compress, decompress } from 'lz-string';
-import { useMock } from './env';
+import { useMock, useLocalData } from './env';
 import { mockData } from './mock';
 
 const writeCache = async (key, val) => {
@@ -33,7 +33,8 @@ export const getData = async (accessToken) => {
     return;
   }
 
-  let graphdata = await callMSGraph(graphContentEndpoint, accessToken);
+  const endpoint = useLocalData ? graphContentEndpoint.replace('https://graph.microsoft.com', '/__graph') : graphContentEndpoint;
+  let graphdata = await callMSGraph(endpoint, accessToken);
   
   //if we need to filter out file(s) for testing, can be done here.
   //graphdata = graphdata.filter(x => !["billing.zip",].includes(x.name));
