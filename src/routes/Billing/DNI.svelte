@@ -16,6 +16,7 @@
             { title: "Review Reason Field", flag: 256 },
             { title: "Bad RaceTrac PO", flag: 512 },
             { title: "Bad Equipment", flag: 1024 },
+            { title: "Bad Division/Terminal", flag: 2048 },
         ]
     const getReasons = row => {
         let retval = FlagMaps
