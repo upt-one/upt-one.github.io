@@ -3,7 +3,7 @@ import {
   StackedBarChartLabels,
   FleetColors,
 } from '$lib/chart-shared'
-import { addDays } from '$lib/frtl-utility.js'
+import { addDays, feedDay } from '$lib/frtl-utility.js'
 const getMondayByDate = (d) => {
   const first = d.getDate() - d.getDay() + 1;
   const monday = new Date(d.setDate(first));
@@ -15,10 +15,10 @@ export const getConfig = async (d) => {
   const ds0 = json.OperationsV1
   const tds = ds0.tds
   const dt0 = ds0.LoadsByTypeV2
-  const firstMonday = getMondayByDate(new Date(tds))
+  const firstMonday = getMondayByDate(feedDay(tds))
   const myDates = [6,5,4,3,2,1].map(x => addDays(firstMonday, -7 * x))
   const myLabels = myDates.map((d) =>
-    new Date(d).toLocaleDateString('en-US', {
+    feedDay(d).toLocaleDateString('en-US', {
       month: 'numeric',
       day: 'numeric',
     }),

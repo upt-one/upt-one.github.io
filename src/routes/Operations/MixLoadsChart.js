@@ -3,25 +3,25 @@ import {
   StackedBarChartLabels,
   TerminalColors,
 } from '$lib/chart-shared'
-import { addMonths } from '$lib/frtl-utility.js'
+import { addMonths, feedDay } from '$lib/frtl-utility.js'
 
 export const getConfig = async (d) => {
 
   const json = d
   const ds0 = json.OperationsV1
-  const tds = new Date(ds0.tds)
+  const tds = feedDay(ds0.tds)
   const dt0 = ds0.MixLoadsV1
   const myTerminals = [...new Set(dt0.map((x) => x.Terminal))]
   const myKeys = [...Array(12).keys()].reverse()
   const myProps = myKeys.map(x => x === 0 ? 'c' : -x).map(x => `${x}`)
   const myDates = myKeys.map(x => addMonths(tds, -x))
   const myLabels = myDates.map((d) =>
-    new Date(d).toLocaleDateString('en-US', {
+    feedDay(d).toLocaleDateString('en-US', {
       month: 'short',
     }),
   )
   const fd0 = (d) =>
-  new Date(d).toLocaleDateString('en-US', {
+  feedDay(d).toLocaleDateString('en-US', {
     month: 'short'
   })
   const rows = dt0

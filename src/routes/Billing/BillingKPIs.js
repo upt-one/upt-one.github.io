@@ -1,6 +1,7 @@
 import {
   number_format,
   date_diff_indays,
+  feedDay,
   sumBy,
   countBy,
   sumByMany
@@ -16,7 +17,7 @@ export const getKPIs = async (d, division = '') => {
   const byDiv = (rows, field = 'ord_revtype1') =>
     division ? rows.filter((r) => r[field] === division) : rows
 
-  const fd0 = x => new Date(x)
+  const fd0 = x => feedDay(x)
     .toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   const fic0 = x => `${x.length}`
   const fic1 = x => `$${(x.reduce((a, { ivh_totalcharge: b }) => a + b, 0) / 1000).toFixed(0)}k`.replace('$0','<$1')

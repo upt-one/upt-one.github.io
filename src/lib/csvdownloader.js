@@ -4,12 +4,18 @@
 export const downloadcsv = (o, h, n = 'data') => {
     downloadFile(toCSV(o, h), n + '.csv', 'text/csv');
 }
-const toCSV = (o, h) => {
-    const a = (v) => `"${v.join(`","`)}"`
-    let csv = []
-    csv.push(h ? h : Object.keys(o[0]));
-    o.forEach(x => csv.push(a(Object.values(x))))
-    return csv.join("\n")
+// quotes inside a cell are doubled. a text cell starting with = + - @ tab or CR gets a leading '
+// so a spreadsheet opening the file reads it as text, not a formula. that's part of the owasp
+// csv injection list: a leading LF and the fullwidth variants aren't covered (#32). numbers
+// pass through, negatives included.
+const cell = v => {
+    let s = v == null ? '' : String(v)
+    if (typeof v === 'string' && /^[=+\-@\t\r]/.test(s) && isNaN(Number(s))) s = `'${s}`
+    return `"${s.replaceAll('"', '""')}"`
+}
+export const toCSV = (o, h) => {
+    const row = r => r.map(cell).join(',')
+    return [row(h ? h : Object.keys(o[0])), ...o.map(x => row(Object.values(x)))].join('\n')
 }
 const downloadFile = (fileContents, fileName, fileType) => {
 

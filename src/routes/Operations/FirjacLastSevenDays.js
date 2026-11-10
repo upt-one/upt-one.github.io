@@ -1,3 +1,4 @@
+import { feedDay } from '$lib/frtl-utility.js'
 import {
   getDefaultOptions,
   StackedBarChartLabels,
@@ -20,7 +21,7 @@ export const getConfig = async (d) => {
   const WidthOfChart = myTerminals.length % 3 === 0 ? 4 : 6
   const myDates = [...new Set(dt0.map((x) => x.Date))]
   const myLabels = myDates.map((d) =>
-    new Date(d).toLocaleDateString('en-US', {
+    feedDay(d).toLocaleDateString('en-US', {
       month: 'numeric',
       day: 'numeric',
     }),

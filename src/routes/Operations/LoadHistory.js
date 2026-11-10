@@ -1,4 +1,4 @@
-import { addDays } from '$lib/frtl-utility.js'
+import { addDays, feedDay } from '$lib/frtl-utility.js'
 Date.prototype.addDays = function (days) {
   var date = new Date(this.valueOf());
   date.setDate(date.getDate() + days);
@@ -14,7 +14,7 @@ function getDates(startDate, stopDate) {
   }
   return dateArray;
 }
-const fd0 = d => new Date(d).toLocaleDateString('en-US', {
+const fd0 = d => feedDay(d).toLocaleDateString('en-US', {
   month: 'numeric',
   day: 'numeric',
 })
@@ -36,7 +36,7 @@ export const getConfig = async (d) => {
   const dt0 = ds0.LoadHistoryV1
   const dt1 = ds0.DriverCountPerDayV1
   const Terminals = dt1.map(x => x.Terminal)
-  const tds = new Date(ds0.tds)
+  const tds = feedDay(ds0.tds)
   const rows = dt0
     .filter(x => Terminals.includes(x.Terminal))
     .map(x => ({ ...x, DriverCountPerDay: dt1.find(y => y.Terminal === x.Terminal) }))

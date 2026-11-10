@@ -59,8 +59,15 @@ export const getUniqueValues = vals => [...new Set(vals)]
 export const filterUnique = (x, i, a) => a.indexOf(x) == i
 export const cumulativeSum = (sum => value => sum += value)(0);
 export const convertToDate = tds => new Date(parseInt(tds.substr(6)))
+// a feed date as a local date, read off its yyyy-mm-dd. new Date() on the full stamp moves it
+// into the viewer's zone, so anyone west of eastern time sees the day before (#30).
+// anything that isn't a yyyy-mm-dd string, a Date included, goes through new Date() as before.
+export const feedDay = x => {
+    const m = typeof x === 'string' && /^(\d{4})-(\d{2})-(\d{2})/.exec(x)
+    return m ? new Date(+m[1], m[2] - 1, +m[3]) : new Date(x)
+}
 const toUTC = x => {
-    const d = new Date(x);
+    const d = feedDay(x);
     return Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())
 };
 export const date_diff_indays = (d1, d2) => Math

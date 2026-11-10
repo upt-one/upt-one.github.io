@@ -1,3 +1,4 @@
+import { feedDay } from '$lib/frtl-utility.js'
 import { getDefaultOptions, StackedBarChartLabels, UniqueColors } from "$lib/chart-shared";
 export const getConfig = async (d) => {
 
@@ -52,7 +53,7 @@ export const getConfig = async (d) => {
 
   const getTitle = (d) => [
     `Loads/BillTo by Terminal - ${
-      new Date(d).toLocaleDateString('en-US', {
+      feedDay(d).toLocaleDateString('en-US', {
         month: 'numeric',
         day: 'numeric',
       })

@@ -3,7 +3,6 @@
   import RunoutsPerDay from './RunoutsPerDay.svelte'
   import LoadForecast from './LoadForecast.svelte'
   import LoadHistory from './LoadHistory.svelte'
-  import Ato from './Ato.svelte'
   import AverageLoadsByMonth from './AverageLoadsByMonth.svelte'
   import DriversByFleetByTerminal from './DriversByFleetByTerminal.svelte'
   import Tractors from './Tractors.svelte'
@@ -20,7 +19,6 @@
 <Tractors />
 <LoadsByType />
 <AverageLoadsByMonth />
-<Ato />
 <DriverCountPerDay />
 <LoadForecast />
 <LoadHistory />
