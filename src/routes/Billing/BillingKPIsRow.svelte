@@ -1,12 +1,12 @@
 <script>
   import ToggleButton from '$lib/ToggleButton.svelte'
   import BillingKPIsRowDetail from './BillingKPIsRowDetail.svelte'
-  import { number_format, isMP } from '$lib/frtl-utility'
+  import { number_format, isMP, unkFirst } from '$lib/frtl-utility'
   export let kpi
   let show = false
   // Defer tsum until row is expanded — saves N upfront compute passes for
   // KPIs the user never opens.
-  $: TerminalTotals = show ? kpi.tsum(kpi.rows) : []
+  $: TerminalTotals = show ? unkFirst(kpi.tsum(kpi.rows)) : []
   import { data } from '$lib/data.js'
   const json = $data
   const getMProws = (json, kpi) =>

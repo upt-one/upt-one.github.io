@@ -37,6 +37,11 @@ export const countBy = (data, rkey, rval) => Array
         .reduce((m, { key }) => m.set(key, (m.get(key) || 0) + 1), new Map),
         ([key, val]) => ({ key, val }))
     .sort((a, b) => { return b.val - a.val })
+// billing asked for the UNK terminal at the top of every drill-down, the rest keep their order
+export const unkFirst = list => [
+    ...list.filter(x => x.key === 'UNK'),
+    ...list.filter(x => x.key !== 'UNK'),
+]
 /**
  * for d, group on k, sum by values in ...v
  * @param {dataset to process} d 

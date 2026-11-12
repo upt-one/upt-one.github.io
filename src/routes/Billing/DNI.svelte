@@ -1,30 +1,10 @@
 <script>
     import { data } from '$lib/data.js'
     import { isMP,hasOne } from '$lib/frtl-utility';
+    import { getReasons } from './dni.js'
     const json = $data
     export let rows;
     export let kpi;
-    const FlagMaps = [
-            { title: "No Freight BOLs", flag: 1 },
-            { title: "A Freight BOL is missing", flag: 2 },
-            { title: "A Freight BOL is not Alphanumeric", flag: 4 },
-            { title: "A Freight BOL is too short", flag: 8 },
-            { title: "A Freight has Zero Gallons", flag: 16 },
-            { title: "Freight/Order mismatch", flag: 32 },
-            { title: "A Freight has 300 Gross Gallons", flag: 64 },
-            { title: "RefNum of all 0s found", flag: 128 },
-            { title: "Review Reason Field", flag: 256 },
-            { title: "Bad RaceTrac PO", flag: 512 },
-            { title: "Bad Equipment", flag: 1024 },
-            { title: "Bad Division/Terminal", flag: 2048 },
-        ]
-    const getReasons = row => {
-        let retval = FlagMaps
-            .filter(x => (row.errormask&x.flag)===x.flag)
-            .map(x=>x.title)
-
-        return retval.length === 0 ? ["Unknown"] : retval
-    }
     const vals = [
         {a:'BillTo',b:'ord_billto'},
         {a:'Shipper',b:'ord_shipper'},
@@ -54,7 +34,7 @@
                 <div class="alert alert-light border-info mt-3">
                     <p class="border-bottom text-center">Reasons for DNI:</p>
                     <ul>
-                        {#each getReasons(row) as reason}
+                        {#each getReasons(row.errormask) as reason}
                         <li><small>{reason}</small></li>
                         {/each}
                     </ul>

@@ -16,7 +16,7 @@
         </div>
         <slot></slot>
         <div class="card-footer text-center text-muted text-small justify-content-between">
-            Last Updated: {new Date(tds).toLocaleString()}
+            Last Updated: {tds ? new Date(tds).toLocaleString() : 'unknown'}
         </div>
     </div>
 </div>

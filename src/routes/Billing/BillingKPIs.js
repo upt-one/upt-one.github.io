@@ -6,6 +6,7 @@ import {
   countBy,
   sumByMany
 } from '$lib/frtl-utility'
+import { dniCsvRow } from './dni.js'
 
 export const getKPIs = async (d, division = '') => {
 
@@ -62,9 +63,10 @@ export const getKPIs = async (d, division = '') => {
 
   //all order kpis use these settings
   const dnikpis = {
-    hdrs: 'Number,BillTo,Shipper,Consignee,Delivered,Driver1'.split(
+    hdrs: 'Number,BillTo,Shipper,Consignee,Delivered,Driver1,Reasons'.split(
       ',',
     ),
+    csvf: dniCsvRow,
     mapf: (x) => ({
       ord_hdrnumber: x.ord_hdrnumber,
       ord_billto: x.ord_billto,

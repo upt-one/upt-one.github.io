@@ -19,6 +19,8 @@
 // (division), ord_revtype2 = the TERMINAL. "Company"/"Terminal" are UI labels applied
 // at render, never renamed data columns. See docs/migration-46-revtype.md.
 
+import { getReasons } from '../Billing/dni.js'
+
 export const DNI = 'DNI'
 export const MP = 'Missing Paperwork'
 export const BOTH = 'Both'
@@ -30,6 +32,13 @@ const key = (v) => (v === null || v === undefined || v === '' ? UNKNOWN : String
 // a fixed-format local timestamp, so slicing beats parsing: it cannot shift a day for
 // a viewer west of eastern time the way `new Date(x).toLocaleDateString()` does (#30).
 export const completedDate = (row) => String(row?.ord_completiondate ?? '').substring(0, 10)
+
+// the page needs both feeds. one left out by a failed download would read as zero loads in
+// its bucket, so the card shows an error instead of totals (#29). empty arrays are fine.
+export const missingFeeds = (json) =>
+  [['BillingV1', 'OrdersV2'], ['EbeV1', 'MissingPaperworkV2']]
+    .filter(([feed, table]) => !Array.isArray(json?.[feed]?.[table]))
+    .map(([feed]) => feed)
 
 /**
  * Collapse the DNI and Missing Paperwork datasets to one row per load.
@@ -173,4 +182,6 @@ export const toExportRows = (loads) =>
     MissingPaperwork: load.mp ? 'Y' : '',
     Buckets: load.bucket,
     Missing: load.missing.join('; '),
+    // the view keeps the raw mask, the csv spells it out like the billing dni csv
+    DNIReasons: load.dni ? getReasons(Number(load.reason)).join('; ') : '',
   }))

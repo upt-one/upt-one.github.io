@@ -10,11 +10,8 @@ export async function callMSGraph(endpoint, token) {
         headers: headers
     };
 
-    try {
-        const response = await fetch(endpoint, options);
-        const data = await response.json();
-        return data.value;
-    } catch (error) {
-        return console.error(error);
-    }
+    // a failed listing throws with its status, so the page shows why instead of spinning (#29)
+    const response = await fetch(endpoint, options);
+    if (!response.ok) throw new Error(`file listing failed: ${response.status} ${response.statusText}`);
+    return (await response.json()).value;
 }

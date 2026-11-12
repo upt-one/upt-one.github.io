@@ -3,7 +3,7 @@
 // are the two things that were wrong in the emailed report and on the Billing tile.
 import { describe, it, expect } from 'vitest'
 import {
-  buildLoads, summarize, applyFilters, groupLoads, toExportRows, DNI, MP, BOTH,
+  buildLoads, missingFeeds, summarize, applyFilters, groupLoads, toExportRows, DNI, MP, BOTH,
 } from './loads-by-bucket.js'
 
 const iso = (d) => `2026-07-${d}T09:30:00.0000000-04:00`
@@ -70,6 +70,14 @@ describe('buildLoads', () => {
   it('takes the completion date off the string, so it cannot shift a day by timezone', () => {
     const loads = buildLoads(json([ord(5, 'FLRT', 'MAC', { ord_completiondate: iso('01') })], []))
     expect(loads[0].completed).toBe('2026-07-01')
+  })
+
+  it('names a feed that is missing, so the page errors instead of showing zeros (#29)', () => {
+    expect(missingFeeds(json([ord(1, 'FLRT', 'MAC')], [mp(1, 'FLRT', 'MAC', 'BOL (1)')]))).toEqual([])
+    expect(missingFeeds(json([], []))).toEqual([])
+    expect(missingFeeds({ EbeV1: { MissingPaperworkV2: [] } })).toEqual(['BillingV1'])
+    expect(missingFeeds({ BillingV1: { OrdersV2: [] } })).toEqual(['EbeV1'])
+    expect(missingFeeds({})).toEqual(['BillingV1', 'EbeV1'])
   })
 
   it('does not throw on a missing or empty dataset', () => {
@@ -159,12 +167,22 @@ describe('toExportRows', () => {
     const [row] = toExportRows(loads)
     expect(Object.keys(row)).toEqual([
       'Company', 'Terminal', 'BillTo', 'Order', 'Completed', 'Driver',
-      'InvStatus', 'DNI', 'MissingPaperwork', 'Buckets', 'Missing',
+      'InvStatus', 'DNI', 'MissingPaperwork', 'Buckets', 'Missing', 'DNIReasons',
     ])
     expect(row.DNI).toBe('Y')
     expect(row.MissingPaperwork).toBe('Y')
     expect(row.Buckets).toBe(BOTH)
     expect(row.Missing).toBe('BOL (9)')
+  })
+
+  it('spells out the dni reasons from the mask, blank for a paperwork-only load', () => {
+    const loads = buildLoads(json(
+      [ord(1, 'FLRT', 'MAC', { reason: 1 | 2048 })],
+      [mp(2, 'FLRT', 'MAC', 'BOL (9)')],
+    ))
+    const rows = toExportRows(loads)
+    expect(rows.find((r) => r.Order === '1').DNIReasons).toBe('No Freight BOLs; Bad Division/Terminal')
+    expect(rows.find((r) => r.Order === '2').DNIReasons).toBe('')
   })
 
   it('leaves the flag blank rather than writing N, so excel filters cleanly', () => {

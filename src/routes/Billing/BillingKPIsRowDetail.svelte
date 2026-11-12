@@ -56,10 +56,10 @@
   {/if}
   <td class="p-0">
     <ToggleButton bind:show />
-    {#if !kpi.isDriverStats && !kpi.isDNI}
+    {#if !kpi.isDriverStats}
       <button
         class="btn btn-sm btn-secondary"
-        on:click={() => downloadcsv(rows, kpi.hdrs, t)}>
+        on:click={() => downloadcsv(kpi.csvf ? rows.map(kpi.csvf) : rows, kpi.hdrs, t)}>
         CSV
       </button>
     {/if}

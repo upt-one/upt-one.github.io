@@ -47,16 +47,16 @@ export const getData = async (accessToken) => {
     localStorage.removeItem(x)
   });
 
-  let filedata = await Promise.all(graphdata.map(f => tryGetFromCache(f).catch(async e => {
-    console.log(e);
-    try {
-      return fetchAndCache(f);
-    } catch (message) {
-      return console.log(message);
-    }
-  })));
-  data.set(Object.assign(...filedata));
-  window["dbg"] && (window.json = Object.assign(...filedata));
+  // a file that fails to download is left out, so only the cards that read it show an error (#29)
+  const loadFile = f => tryGetFromCache(f)
+    .catch(() => fetchAndCache(f))
+    .catch(e => {
+      console.error(`skipping ${f.name}`, e);
+      return {};
+    });
+  const merged = Object.assign({}, ...await Promise.all(graphdata.map(loadFile)));
+  data.set(merged);
+  window["dbg"] && (window.json = merged);
 }
 
 const tryGetFromCache = async fileData => {

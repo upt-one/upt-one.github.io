@@ -3,6 +3,7 @@
   import "$lib/global.css";
   import NavBar from '$lib/NavBar.svelte'
   import Spinner from '$lib/Spinner.svelte'
+  import LoadError from '$lib/LoadError.svelte'
   import Content from './Content.svelte'
   window['dbg'] = window.location.href.includes('?debug')
   window['dbg'] && console.log('\n---debug messaging enabled---\n\n')
@@ -24,9 +25,11 @@
             <Spinner message={'Getting data...'} />
           {:then _}
             <Content />
-            <!-- {:catch error}Error: {error} <br /><pre width="100%">{error.stack}</pre> -->
+          {:catch error}
+            <LoadError {error} />
           {/await}
-          <!-- {:catch error}Error: {error} <br /><pre width="100%">{error.stack}</pre> -->
+        {:catch error}
+          <LoadError {error} />
         {/await}
       </div>
     </div>

@@ -6,12 +6,14 @@
   import { downloadcsv } from '$lib/csvdownloader'
   import Card from '$lib/Card.svelte'
   import {
-    buildLoads, summarize, applyFilters, groupLoads, toExportRows, DNI, MP, BOTH,
+    buildLoads, missingFeeds, summarize, applyFilters, groupLoads, toExportRows, DNI, MP, BOTH,
   } from './loads-by-bucket.js'
+  import CardError from '$lib/CardError.svelte'
 
   $: json = $data
+  $: missing = json ? missingFeeds(json) : []
   $: tds = json?.BillingV1?.tds
-  $: allLoads = json ? buildLoads(json) : []
+  $: allLoads = json && !missing.length ? buildLoads(json) : []
 
   let company = ''
   let terminal = ''
@@ -80,6 +82,8 @@
 
     {#if !json}
       <p class="text-muted mb-0">Loading billing data…</p>
+    {:else if missing.length}
+      <CardError error={`missing feed: ${missing.join(', ')}`} />
     {:else}
 
       <!-- summary strip: the overlap leads, because that is the number the emailed
